@@ -988,10 +988,25 @@ Python, SQL, C++, JavaScript, Spark, Kafka, Airflow, dbt, PostgreSQL, ETL, LangC
             loadingMsg.textContent = "❌ " + errorMessage;
             console.error("Detailed API Error:", data);
         }
-    } catch (err) {
-        loadingMsg.textContent = "⚠️ Network Error. Make sure the site is deployed on Netlify.";
-        console.error(err);
+    // هنفترض إن ده الجزء اللي جوه الـ catch أو الـ else
+} catch (err) {
+    // 1. التأكد لو المشكلة هي الزحمة (Quota Exceeded)
+    if (err.message.includes("quota") || err.status === 429) {
+        let secondsLeft = 12; // هنثبتها على 12 ثانية بناءً على رسالة جوجل
+        
+        const timer = setInterval(() => {
+            loadingMsg.textContent = `⏳ زحمة شوية.. حاول تاني كمان ${secondsLeft} ثانية`;
+            secondsLeft--;
+
+            if (secondsLeft < 0) {
+                clearInterval(timer);
+                loadingMsg.textContent = "✅ تقدر تجرب دلوقتي!";
+            }
+        }, 1000);
+    } else {
+        loadingMsg.textContent = "⚠️ حصل مشكلة في الشبكة، جرب تاني.";
     }
+    console.error(err);
 }
 </script>
 </body>
