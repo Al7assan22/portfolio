@@ -828,7 +828,7 @@ Python, SQL, C++, JavaScript, Spark, Kafka, Airflow, dbt, PostgreSQL, ETL, LangC
         if (data.candidates && data.candidates.length > 0) {
             loadingMsg.textContent = data.candidates[0].content.parts[0].text;
         } else {
-            loadingMsg.textContent = "I'm having trouble thinking. Try again later!";
+           loadingMsg.textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble thinking. Try again later!";;
             console.error("API Error:", data);
         }
     } catch (err) {
