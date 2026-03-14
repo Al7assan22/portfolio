@@ -732,58 +732,82 @@ document.getElementById('langBtn').addEventListener('click',()=>{
   document.querySelectorAll('[data-en]').forEach(el=>{el.innerHTML=lang==='ar'?(el.dataset.ar||el.dataset.en):el.dataset.en});
 });
 
-// AI BUBBLE
-const aiFabBtn=document.getElementById('aiFabBtn'),aiWindow=document.getElementById('aiWindow'),aiClose=document.getElementById('aiClose');
-const aiInput=document.getElementById('aiInput'),aiSendBtn=document.getElementById('aiSendBtn'),aiMessages=document.getElementById('aiMessages');
-aiFabBtn.addEventListener('click',()=>{aiWindow.classList.toggle('open');if(aiWindow.classList.contains('open'))aiInput.focus()});
-aiClose.addEventListener('click',()=>aiWindow.classList.remove('open'));
-function askChip(btn){document.getElementById('aiChips').style.display='none';sendToAI(btn.textContent)}
-aiSendBtn.addEventListener('click',()=>{const q=aiInput.value.trim();if(q){aiInput.value='';sendToAI(q)}});
-aiInput.addEventListener('keydown',e=>{if(e.key==='Enter')aiSendBtn.click()});
-function addMsg(text,role){const d=document.createElement('div');d.className=`ai-msg ${role}`;d.textContent=text;aiMessages.appendChild(d);aiMessages.scrollTop=aiMessages.scrollHeight;return d}
+// ====== إعدادات الـ AI Bubble ======
+// 1. ربط العناصر (الأسماء لازم تطابق الـ IDs في الـ HTML بتاعك)
+const aiFabBtn = document.getElementById('aiFabBtn'),
+      aiWindow = document.getElementById('aiWindow'),
+      aiClose = document.getElementById('aiClose');
+const aiInput = document.getElementById('aiInput'),
+      aiSendBtn = document.getElementById('aiSendBtn'),
+      aiMessages = document.getElementById('aiMessages');
 
-async function sendToAI(question){
-  addMsg(question,'user');
-  const t=addMsg('Thinking...','bot');t.style.opacity='.5';
-  const SYSTEM=`You are Alhassan Haggag's personal AI assistant. Be helpful, concise, professional.
+// فتح وقفل الـ Bubble
+aiFabBtn.addEventListener('click', () => {
+    aiWindow.classList.toggle('open');
+    if (aiWindow.classList.contains('open')) aiInput.focus();
+});
+aiClose.addEventListener('click', () => aiWindow.classList.remove('open'));
 
-ABOUT ALHASSAN:
-- Name: Alhassan Haggag (الحسن حجاج)
-- Title: Data Engineer & AI Enthusiast (student)
-- Education: 3rd-year Business Informatics, Benha University. Expected graduation 2027.
-- Location: Damanhour, Beheira, Egypt
-- GitHub: github.com/Al7assan22
-- LinkedIn: https://www.linkedin.com/in/alhassan-haggag-5277191b6/
-- WhatsApp: (available via contact form on portfolio)
-- Email: alhassanhaggag@gmail.com
-- Training: DEPI — Digital Egypt Pioneers Initiative, Ministry of Communications & IT, Egypt
-- Business Background: Strong background in Business Strategy, CRM Analysis, ERP Concepts, Financial Modelling, Market Research
+// تشغيل الـ Chips (الاقتراحات)
+function askChip(btn) {
+    document.getElementById('aiChips').style.display = 'none';
+    sendToAI(btn.textContent);
+}
 
-SKILLS: Python, SQL, C++, JavaScript, Apache Spark, Kafka, Airflow, dbt, PostgreSQL, ETL, LangChain, Gemini API, Claude API, Vector DBs, RAG, Power BI, Pandas, NumPy, Docker, Linux, Git, Selenium, BeautifulSoup, Scikit-learn.
+// الإرسال عند الضغط على الزر أو Enter
+aiSendBtn.addEventListener('click', () => {
+    const q = aiInput.value.trim();
+    if (q) {
+        aiInput.value = '';
+        sendToAI(q);
+    }
+});
+aiInput.addEventListener('keydown', e => { if (e.key === 'Enter') aiSendBtn.click(); });
 
-PROJECTS:
-1. Python ETL Pipeline — 11 cleaning ops, DQ warnings, automated reporting
-2. Salesforce Sales Analysis — Salesforce CRM, Python/SQL ETL, Power BI dashboard, forecasting
-3. ATM Banking System — OOP C++ & Python, CSV file I/O
-4. Job Market Scraper & ML — Selenium scraping from Google Maps, Wuzzuf, LinkedIn; PostgreSQL; ML for hiring trends & salary prediction
-5. Kaggle DS Survey Analysis + ML Forecast — Gradient Boosting predictor, demand forecast to 2028, AI chatbot (live at kaggle-survey.html)
-6. Real-Time Data Pipeline — Apache Kafka + Spark Structured Streaming, PostgreSQL, Docker
-7. Automated Data Warehouse — Airflow DAGs + dbt transformations + PostgreSQL + Power BI
-8. Data Platform WIP — Airflow + dbt + PostgreSQL + Streamlit
+// وظيفة إضافة الرسايل للشاشة
+function addMsg(text, role) {
+    const d = document.createElement('div');
+    d.className = `ai-msg ${role}`;
+    d.textContent = text;
+    aiMessages.appendChild(d);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    return d;
+}
 
-CONTACT: Always direct people to use the contact form on the portfolio to reach via WhatsApp.
-Answer concisely and enthusiastically. Redirect unrelated topics back to portfolio.`;
+// الوظيفة الأساسية اللي بتكلم Gemini
+async function sendToAI(question) {
+    addMsg(question, 'user');
+    const loadingMsg = addMsg('Thinking...', 'bot');
 
-  try{
-    const res=await fetch('/.netlify/functions/gemini',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({system_instruction:{parts:[{text:SYSTEM}]},contents:[{role:'user',parts:[{text:question}]}]})});
-    const data=await res.json();
-    t.textContent=data?.candidates?.[0]?.content?.parts?.[0]?.text||'Sorry, could not get a response right now.';
-    t.style.opacity='1';
-  }catch(err){
-    t.textContent='⚠️ Something went wrong. Make sure GEMINI_API_KEY is set in Netlify environment variables.';
-    t.style.opacity='1';
-  }
+    const SYSTEM_PROMPT = `You are Alhassan's AI Assistant. 
+    Alhassan Haggag is a Business Informatics student at Benha University. 
+    Skills: Python, SQL, Power BI, ETL, AWS, Spark. 
+    If asked about the developer, say: "I was developed by Alhassan Haggag. 😊"`;
+
+    try {
+        // ننادي على الوظيفة الوسيطة في Netlify
+        const res = await fetch('/.netlify/functions/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ 
+                    parts: [{ text: SYSTEM_PROMPT + "\n\nUser Question: " + question }] 
+                }]
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.candidates && data.candidates.length > 0) {
+            loadingMsg.textContent = data.candidates[0].content.parts[0].text;
+        } else {
+            loadingMsg.textContent = "I'm having trouble thinking. Try again later!";
+            console.error("API Error:", data);
+        }
+    } catch (err) {
+        loadingMsg.textContent = "⚠️ Network Error. Make sure the site is deployed on Netlify.";
+        console.error(err);
+    }
 }
 </script>
 </body>
