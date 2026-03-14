@@ -14,9 +14,9 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    // استخدام موديل مستقر 1.5-flash
-// الكود الصح
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${API_KEY}`;
+    
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    
     const response = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
