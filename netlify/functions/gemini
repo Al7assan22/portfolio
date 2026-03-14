@@ -1,43 +1,33 @@
 // Netlify Serverless Function — Gemini API Proxy
-// الكود ده هو حلقة الوصل بين موقعك وبين ذكاء جوجل الاصطناعي
+// The API key lives in Netlify Environment Variables as GEMINI_API_KEY
+// Frontend calls: POST /.netlify/functions/gemini
+// This function never exposes the key to the browser
 
 exports.handler = async (event) => {
-  // 1. التأكد من أن الطلب من نوع POST فقط
+  // Only allow POST
   if (event.httpMethod !== 'POST') {
-    return { 
-      statusCode: 405, 
-      body: JSON.stringify({ error: 'Method Not Allowed' }) 
-    };
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
-  // 2. قراءة مفتاح الـ API من إعدادات Netlify
-  // تم تصحيح الاسم هنا ليتوافق مع بقية الكود
-  const GEMINI_API_KEY = "AIzaSyChaLeizkD0LopNmdquL_FwYubMsYUW4Mg";
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-  // 3. التأكد من وجود المفتاح قبل إرسال الطلب
   if (!GEMINI_API_KEY) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'GEMINI_API_KEY is missing in Netlify settings.' })
+      body: JSON.stringify({ error: 'GEMINI_API_KEY not set in Netlify environment variables.' })
     };
   }
 
-  // 4. استلام وقراءة البيانات القادمة من المتصفح
   let body;
   try {
     body = JSON.parse(event.body);
   } catch {
-    return { 
-      statusCode: 400, 
-      body: JSON.stringify({ error: 'Invalid JSON format in request.' }) 
-    };
+    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
 
-  // 5. رابط الاتصال بسيرفر Gemini (إصدار 2.0 Flash)
   const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   try {
-    // 6. إرسال الطلب إلى جوجل
     const response = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,17 +36,15 @@ exports.handler = async (event) => {
 
     const data = await response.json();
 
-    // 7. إرجاع الرد للمتصفح
     return {
       statusCode: response.status,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*' // للسماح بالاتصال من أي مكان
+        'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify(data)
     };
   } catch (err) {
-    // 8. التعامل مع أخطاء الشبكة
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to reach Gemini API', details: err.message })
