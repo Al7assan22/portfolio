@@ -811,51 +811,30 @@ Python, SQL, C++, JavaScript, Spark, Kafka, Airflow, dbt, PostgreSQL, ETL, LangC
 - Contact: always send to the contact form for WhatsApp.
 - If asked "should I work with you?" or similar → answer: Yes, absolutely.`;
 
-try {
-    // نعرض رسالة تحميل
-    loadingMsg.textContent = "Thinking... 🤔";
-
-    // نرسل الطلب للوظيفة الوسيطة على Netlify
-    const res = await fetch('/.netlify/functions/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ 
-                parts: [{ text: (SYSTEM_PROMPT || "") + "\n\nUser Question: " + (question || "") }] 
-            }]
-        })
-    });
-
-    // نحول الـ response إلى JSON
-    let data;
     try {
-        data = await res.json();
-    } catch (jsonErr) {
-        console.error("Failed to parse JSON:", jsonErr);
-        loadingMsg.textContent = "⚠️ Response is not JSON. Check function logs.";
-        return;
-    }
+        // ننادي على الوظيفة الوسيطة في Netlify
+        const res = await fetch('/.netlify/functions/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ 
+                    parts: [{ text: SYSTEM_PROMPT + "\n\nUser Question: " + question }] 
+                }]
+            })
+        });
 
-    // نعرض الـ response كله في console للdebug
-    console.log("Full API Response:", data);
+        const data = await res.json();
 
-    // نتأكد إن فيه candidates قبل ما نقرأ
-    if (data && Array.isArray(data.candidates) && data.candidates.length > 0) {
-        const answer = data.candidates[0]?.content?.parts?.[0]?.text;
-        if (answer) {
-            loadingMsg.textContent = answer;
+        if (data.candidates && data.candidates.length > 0) {
+            loadingMsg.textContent = data.candidates[0].content.parts[0].text;
         } else {
-            console.warn("No text found in first candidate:", data.candidates[0]);
-            loadingMsg.textContent = "⚠️ No text found in API response.";
+            loadingMsg.textContent = "I'm having trouble thinking. Try again later!";
+            console.error("API Error:", data);
         }
-    } else {
-        console.warn("No candidates in API response:", data);
-        loadingMsg.textContent = "I'm having trouble thinking. Try again later!";
+    } catch (err) {
+        loadingMsg.textContent = "⚠️ Network Error. Make sure the site is deployed on Netlify.";
+        console.error(err);
     }
-
-} catch (err) {
-    console.error("Network or fetch error:", err);
-    loadingMsg.textContent = "⚠️ Network Error. Make sure the site is deployed on Netlify.";
 }
 </script>
 </body>
