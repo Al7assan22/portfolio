@@ -828,8 +828,9 @@ Python, SQL, C++, JavaScript, Spark, Kafka, Airflow, dbt, PostgreSQL, ETL, LangC
         if (data.candidates && data.candidates.length > 0) {
             loadingMsg.textContent = data.candidates[0].content.parts[0].text;
         } else {
-           loadingMsg.textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble thinking. Try again later!";;
-            console.error("API Error:", data);
+           const errorMessage = data.error ? data.error.message : "I'm having trouble thinking. Try again later!";
+          loadingMsg.textContent = "❌ " + errorMessage;
+           console.error("Detailed API Error:", data);
         }
     } catch (err) {
         loadingMsg.textContent = "⚠️ Network Error. Make sure the site is deployed on Netlify.";
