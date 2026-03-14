@@ -1,33 +1,22 @@
-// Netlify Serverless Function — Gemini API Proxy
-// The API key lives in Netlify Environment Variables as GEMINI_API_KEY
-// Frontend calls: POST /.netlify/functions/gemini
-// This function never exposes the key to the browser
-
 exports.handler = async (event) => {
-  // Only allow POST
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const API_KEY = process.env.GEMINI_API_KEY; // القيمة تأتي من إعدادات Netlify
 
-  if (!GEMINI_API_KEY) {
+  if (!API_KEY) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'GEMINI_API_KEY not set in Netlify environment variables.' })
+      body: JSON.stringify({ error: 'Server Configuration Error: API Key missing.' })
     };
   }
 
-  let body;
   try {
-    body = JSON.parse(event.body);
-  } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
-  }
+    const body = JSON.parse(event.body);
+    // استخدام موديل مستقر 1.5-flash
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${AIzaSyCO1rCUPpd5rmGSu4zv10y51cf2v67M_TA}`;
-
-  try {
     const response = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -38,16 +27,16 @@ exports.handler = async (event) => {
 
     return {
       statusCode: response.status,
-      headers: {
+      headers: { 
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*' // للسماح للمتصفح بالوصول
       },
       body: JSON.stringify(data)
     };
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to reach Gemini API', details: err.message })
+      body: JSON.stringify({ error: 'Failed to connect to Gemini', details: err.message })
     };
   }
 };
