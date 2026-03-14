@@ -1,9 +1,14 @@
+// netlify/functions/openai.js
 exports.handler = async (event) => {
+  // السماح فقط لطلبات POST
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return { 
+      statusCode: 405, 
+      body: JSON.stringify({ error: 'Method Not Allowed' }) 
+    };
   }
 
-  const API_KEY = process.env.GEMINI_API_KEY; // القيمة تأتي من إعدادات Netlify
+  const API_KEY = process.env.OPENAI_API_KEY; // خلي المفتاح بتاعك في إعدادات Netlify
 
   if (!API_KEY) {
     return {
@@ -13,14 +18,25 @@ exports.handler = async (event) => {
   }
 
   try {
-    const body = JSON.parse(event.body);
-    // استخدام موديل مستقر 1.5-flash
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+    const body = JSON.parse(event.body); 
+    // body لازم يكون بالشكل: { "prompt": "نصك هنا" }
 
-    const response = await fetch(GEMINI_URL, {
+    const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+
+    const response = await fetch(OPENAI_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo', // ممكن تغيره لـ gpt-4 لو تحب
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: body.prompt }
+        ],
+        temperature: 0.7
+      })
     });
 
     const data = await response.json();
@@ -36,7 +52,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to connect to Gemini', details: err.message })
+      body: JSON.stringify({ error: 'Failed to connect to OpenAI', details: err.message })
     };
   }
 };
